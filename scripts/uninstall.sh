@@ -12,6 +12,8 @@ LAUNCH_AGENT_DIR="$HOME/Library/LaunchAgents"
 LAUNCH_AGENT_LABEL="com.lumen.streaming"
 LAUNCH_AGENT_PLIST="$LAUNCH_AGENT_DIR/$LAUNCH_AGENT_LABEL.plist"
 
+APP_BUNDLE="$HOME/Applications/Lumen.app"
+
 # Legacy CLI paths (from previous installs)
 OLD_INSTALL_DIR="$HOME/.local/share/lumen"
 OLD_BIN_DIR="$HOME/.local/bin/lumen"
@@ -79,6 +81,13 @@ fi
 if [ -d "$CONFIG_DIR" ]; then
     rm -rf "$CONFIG_DIR"
     ok "Removed $CONFIG_DIR"
+fi
+
+# ─── Remove .app bundle ────────────────────────────────────────────────────────
+
+if [ -d "$APP_BUNDLE" ]; then
+    rm -rf "$APP_BUNDLE"
+    ok "Removed Lumen.app bundle"
 fi
 
 # ─── Cleanup legacy CLI paths ──────────────────────────────────────────────────

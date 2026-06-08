@@ -16,6 +16,8 @@ LAUNCH_AGENT_LABEL="com.lumen.streaming"
 LAUNCH_AGENT_PLIST="$HOME/Library/LaunchAgents/$LAUNCH_AGENT_LABEL.plist"
 BINARY_PATH="$INSTALL_DIR/sunshine"
 PERM_FLAG="$INSTALL_DIR/.permissions_configured"
+APP_BUNDLE_SOURCE="$LUMEN_DIR/macos/Lumen.app"
+APP_BUNDLE_DEST="$HOME/Applications/Lumen.app"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -439,6 +441,20 @@ if [ -d "$HOME/.local/share/lumen" ]; then
     ok "Removed old install directory (~/.local/share/lumen)"
 fi
 
+# ─── Install .app bundle (Spotlight / Launchpad) ────────────────────────────────
+
+info "Installing Lumen.app..."
+
+mkdir -p "$HOME/Applications"
+
+# Remove previous version if exists
+if [ -d "$APP_BUNDLE_DEST" ]; then
+    rm -rf "$APP_BUNDLE_DEST"
+fi
+
+cp -Rf "$APP_BUNDLE_SOURCE" "$APP_BUNDLE_DEST"
+ok "Lumen.app installed to $APP_BUNDLE_DEST"
+
 # ─── Post-install ───────────────────────────────────────────────────────────────
 
 echo ""
@@ -473,4 +489,12 @@ else
     echo "    See README for full details."
 fi
 
+echo ""
+echo "  Tips:"
+echo "    - Search for 'Lumen' in Spotlight to open the Web UI anytime"
+echo "    - Or double-click Lumen.app in your Applications folder"
+echo ""
+
+# Open the app so it registers in Spotlight/Launchpad index
+open "$APP_BUNDLE_DEST" 2>/dev/null || true
 echo ""
