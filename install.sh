@@ -495,6 +495,17 @@ echo "    - Search for 'Lumen' in Spotlight to open the Web UI anytime"
 echo "    - Or double-click Lumen.app in your Applications folder"
 echo ""
 
-# Open the app so it registers in Spotlight/Launchpad index
+# Wait for the Web UI to be ready (up to 10 seconds)
+info "Waiting for Lumen Web UI..."
+for i in $(seq 1 10); do
+    if curl -sfk "https://localhost:47990" -o /dev/null 2>/dev/null; then
+        ok "Web UI is ready"
+        break
+    fi
+    sleep 1
+done
+
+# Open the app (registers in Spotlight/Launchpad index) and open the Web UI
 open "$APP_BUNDLE_DEST" 2>/dev/null || true
+open "https://localhost:47990" 2>/dev/null || true
 echo ""

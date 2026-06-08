@@ -9,6 +9,8 @@
     <string>Lumen</string>
     <key>CFBundleExecutable</key>
     <string>Lumen</string>
+    <key>CFBundleIconFile</key>
+    <string>Lumen</string>
     <key>CFBundleIdentifier</key>
     <string>com.lumen.streaming</string>
     <key>CFBundleInfoDictionaryVersion</key>
@@ -25,5 +27,9 @@
     <string>14.0</string>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>NSScreenCaptureDescription</key>
+    <string>Lumen needs screen recording access to capture your display for streaming to Moonlight clients. No video data is stored or transmitted outside your local network.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Lumen can stream system audio to Moonlight clients. Microphone access is used for audio capture during streaming sessions.</string>
 </dict>
 </plist>

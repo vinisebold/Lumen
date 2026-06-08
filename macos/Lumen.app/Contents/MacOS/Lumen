@@ -3,21 +3,29 @@
 # ─── Lumen Launcher App ────────────────────────────────────────────────────────
 # Double-clicking this app (or opening it from Spotlight/Launchpad) will:
 #   1. Ensure the Lumen background service is running
-#   2. Open the Web UI in your default browser
+#   2. Wait for the Web UI to be ready
+#   3. Open the Web UI in your default browser
 # ────────────────────────────────────────────────────────────────────────────────
 
 LAUNCH_AGENT_LABEL="com.lumen.streaming"
 LAUNCH_AGENT_PLIST="$HOME/Library/LaunchAgents/$LAUNCH_AGENT_LABEL.plist"
 BINARY="$(dirname "$0")/sunshine"
+WEB_UI="https://localhost:47990"
 
 # Check if the LaunchAgent is loaded
 if ! launchctl list | grep -q "$LAUNCH_AGENT_LABEL" 2>/dev/null; then
-    # Try to load it
     if [ -f "$LAUNCH_AGENT_PLIST" ] && [ -f "$BINARY" ]; then
         launchctl bootstrap "gui/$(id -u)" "$LAUNCH_AGENT_PLIST" 2>/dev/null
-        sleep 1
     fi
 fi
 
+# Wait for the Web UI to be ready (up to 15 seconds)
+for i in $(seq 1 15); do
+    if curl -sfk "$WEB_UI" -o /dev/null 2>/dev/null; then
+        break
+    fi
+    sleep 1
+done
+
 # Open the Web UI
-open "https://localhost:47990"
+open "$WEB_UI"

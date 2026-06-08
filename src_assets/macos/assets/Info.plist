@@ -3,10 +3,12 @@
 <plist version="1.0">
 <dict>
   <key>CFBundleIdentifier</key>
-  <string>dev.lizardbyte.sunshine</string>
+  <string>com.lumen.streaming</string>
   <key>CFBundleName</key>
-  <string>Sunshine</string>
+  <string>Lumen</string>
+  <key>NSScreenCaptureDescription</key>
+  <string>Lumen needs screen recording access to capture your display for streaming to Moonlight clients.</string>
   <key>NSMicrophoneUsageDescription</key>
-  <string>This app requires access to your microphone to stream audio.</string>
+  <string>Lumen can stream system audio to Moonlight clients.</string>
 </dict>
 </plist>
