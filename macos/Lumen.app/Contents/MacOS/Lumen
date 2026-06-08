@@ -6,10 +6,9 @@
 #   2. Open the Web UI in your default browser
 # ────────────────────────────────────────────────────────────────────────────────
 
-INSTALL_DIR="$HOME/Library/Application Support/Lumen"
 LAUNCH_AGENT_LABEL="com.lumen.streaming"
 LAUNCH_AGENT_PLIST="$HOME/Library/LaunchAgents/$LAUNCH_AGENT_LABEL.plist"
-BINARY="$INSTALL_DIR/sunshine"
+BINARY="$(dirname "$0")/sunshine"
 
 # Check if the LaunchAgent is loaded
 if ! launchctl list | grep -q "$LAUNCH_AGENT_LABEL" 2>/dev/null; then

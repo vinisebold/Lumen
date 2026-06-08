@@ -7,7 +7,7 @@
     <string>com.lumen.streaming</string>
     <key>ProgramArguments</key>
     <array>
-        <string>__HOME__/Library/Application Support/Lumen/sunshine</string>
+        <string>__HOME__/Applications/Lumen.app/Contents/MacOS/sunshine</string>
     </array>
     <key>RunAtLoad</key>
     <true/>

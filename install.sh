@@ -14,10 +14,11 @@ LOG_DIR="$HOME/Library/Logs/Lumen"
 BUILD_DIR="$LUMEN_DIR/build"
 LAUNCH_AGENT_LABEL="com.lumen.streaming"
 LAUNCH_AGENT_PLIST="$HOME/Library/LaunchAgents/$LAUNCH_AGENT_LABEL.plist"
-BINARY_PATH="$INSTALL_DIR/sunshine"
-PERM_FLAG="$INSTALL_DIR/.permissions_configured"
 APP_BUNDLE_SOURCE="$LUMEN_DIR/macos/Lumen.app"
 APP_BUNDLE_DEST="$HOME/Applications/Lumen.app"
+BINARY_PATH="$APP_BUNDLE_DEST/Contents/MacOS/sunshine"
+BUNDLE_MACOS="$APP_BUNDLE_DEST/Contents/MacOS"
+PERM_FLAG="$INSTALL_DIR/.permissions_configured"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -214,20 +215,34 @@ clang -framework CoreGraphics -o "$BUILD_DIR/get_display_origin" \
 
 # ─── Install ────────────────────────────────────────────────────────────────────
 
-info "Installing to $INSTALL_DIR..."
+info "Installing Lumen.app..."
 
+mkdir -p "$HOME/Applications"
+
+# Remove previous version if exists
+if [ -d "$APP_BUNDLE_DEST" ]; then
+    rm -rf "$APP_BUNDLE_DEST"
+fi
+
+cp -Rf "$APP_BUNDLE_SOURCE" "$APP_BUNDLE_DEST"
+ok "Lumen.app installed to $APP_BUNDLE_DEST"
+
+info "Installing to $APP_BUNDLE_DEST and $INSTALL_DIR..."
+
+mkdir -p "$BUNDLE_MACOS"
 mkdir -p "$INSTALL_DIR"
 mkdir -p "$LOG_DIR"
 mkdir -p "$CONFIG_DIR/scripts"
 
-# Copy binary (follow symlinks)
-cp -fL "$BUILD_DIR/sunshine" "$INSTALL_DIR/sunshine" 2>/dev/null || \
-  cp -f "$BUILD_DIR/sunshine-"* "$INSTALL_DIR/sunshine" 2>/dev/null
+# Copy binary into the .app bundle (so permissions are granted to Lumen.app)
+cp -fL "$BUILD_DIR/sunshine" "$BUNDLE_MACOS/sunshine" 2>/dev/null || \
+  cp -f "$BUILD_DIR/sunshine-"* "$BUNDLE_MACOS/sunshine" 2>/dev/null
+ok "Installed sunshine binary to bundle"
 
-# Copy helper binaries
+# Copy helper binaries next to sunshine inside the bundle
 for helper in vd_helper get_display_origin; do
     if [ -f "$BUILD_DIR/$helper" ]; then
-        cp -f "$BUILD_DIR/$helper" "$INSTALL_DIR/$helper"
+        cp -f "$BUILD_DIR/$helper" "$BUNDLE_MACOS/$helper"
         ok "Installed $helper"
     fi
 done
@@ -333,7 +348,7 @@ printf "  Password: "
 read -rs LUMEN_PASS
 echo ""
 if [ -n "$LUMEN_USER" ] && [ -n "$LUMEN_PASS" ]; then
-    "$INSTALL_DIR/sunshine" --creds "$LUMEN_USER" "$LUMEN_PASS" 2>&1 | grep -v "^$"
+    "$BINARY_PATH" --creds "$LUMEN_USER" "$LUMEN_PASS" 2>&1 | grep -v "^$"
     # Verify credentials were actually written
     if [ -f "$STATE_FILE" ] && grep -q "\"username\"" "$STATE_FILE" 2>/dev/null; then
         ok "Web UI credentials saved"
@@ -360,8 +375,8 @@ fi
 if [ "$AMFI_STATUS" = "disabled" ] && [ -f "$INSTALL_DIR/hid_entitlements.plist" ] && [ -f "$BINARY_PATH" ]; then
     info "Signing binaries for gamepad support..."
     codesign --sign - --entitlements "$INSTALL_DIR/hid_entitlements.plist" --force "$BINARY_PATH" 2>/dev/null
-    if [ -f "$INSTALL_DIR/vd_helper" ]; then
-        codesign --sign - --force "$INSTALL_DIR/vd_helper" 2>/dev/null
+    if [ -f "$BUNDLE_MACOS/vd_helper" ]; then
+        codesign --sign - --force "$BUNDLE_MACOS/vd_helper" 2>/dev/null
     fi
     ok "Binaries signed with HID entitlements"
 fi
@@ -374,15 +389,14 @@ if [ ! -f "$PERM_FLAG" ]; then
     echo -e "${YELLOW}║           macOS Permissions Required (one-time setup)            ║${NC}"
     echo -e "${YELLOW}╠══════════════════════════════════════════════════════════════════╣${NC}"
     echo -e "${YELLOW}║                                                                  ║${NC}"
-    echo -e "${YELLOW}║  Add 'sunshine' to Screen Recording and Accessibility:            ║${NC}"
+    echo -e "${YELLOW}║  Add ${GREEN}Lumen.app${YELLOW} to Screen Recording and Accessibility:                ║${NC}"
     echo -e "${YELLOW}║                                                                  ║${NC}"
     echo -e "${YELLOW}║  1. System Settings will open to the correct pane.               ║${NC}"
     echo -e "${YELLOW}║  2. Click the ${GREEN}+${YELLOW} button.                                         ║${NC}"
-    echo -e "${YELLOW}║  3. Press ${GREEN}Cmd+Shift+G${YELLOW} and paste the path below:                     ║${NC}"
+    echo -e "${YELLOW}║  3. Find ${GREEN}Lumen.app${YELLOW} in your Applications folder.                    ║${NC}"
+    echo -e "${YELLOW}║     (It should appear automatically in the file picker.)          ║${NC}"
     echo -e "${YELLOW}║                                                                  ║${NC}"
-    echo -e "${YELLOW}║     ${GREEN}$BINARY_PATH${NC}  ║${NC}"
-    echo -e "${YELLOW}║                                                                  ║${NC}"
-    echo -e "${YELLOW}║  4. Check the box next to 'sunshine'.                            ║${NC}"
+    echo -e "${YELLOW}║  4. Check the box next to 'Lumen'.                                ║${NC}"
     echo -e "${YELLOW}║                                                                  ║${NC}"
     echo -e "${YELLOW}║  Do this for ${GREEN}both${YELLOW} Screen Recording AND Accessibility.                 ║${NC}"
     echo -e "${YELLOW}╚══════════════════════════════════════════════════════════════════╝${NC}"
@@ -440,20 +454,6 @@ if [ -d "$HOME/.local/share/lumen" ]; then
     rm -rf "$HOME/.local/share/lumen"
     ok "Removed old install directory (~/.local/share/lumen)"
 fi
-
-# ─── Install .app bundle (Spotlight / Launchpad) ────────────────────────────────
-
-info "Installing Lumen.app..."
-
-mkdir -p "$HOME/Applications"
-
-# Remove previous version if exists
-if [ -d "$APP_BUNDLE_DEST" ]; then
-    rm -rf "$APP_BUNDLE_DEST"
-fi
-
-cp -Rf "$APP_BUNDLE_SOURCE" "$APP_BUNDLE_DEST"
-ok "Lumen.app installed to $APP_BUNDLE_DEST"
 
 # ─── Post-install ───────────────────────────────────────────────────────────────
 
