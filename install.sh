@@ -2,7 +2,7 @@
 set -e
 
 # ─── Lumen Installer ───────────────────────────────────────────────────────────
-# One-click build and install for macOS Apple Silicon.
+# One-click build and install for macOS (Apple Silicon arm64 / Intel x86_64).
 # Installs all dependencies, builds from source, and sets up configuration.
 # ────────────────────────────────────────────────────────────────────────────────
 
@@ -41,12 +41,19 @@ if [ "$MACOS_MAJOR" -lt 14 ]; then
 fi
 ok "macOS $(sw_vers -productVersion)"
 
-# Check Apple Silicon
+# Check architecture (Apple Silicon arm64 or Intel x86_64)
 ARCH=$(uname -m)
-if [ "$ARCH" != "arm64" ]; then
-    error "Lumen only supports Apple Silicon (arm64). Detected: $ARCH"
-fi
-ok "Apple Silicon ($ARCH)"
+case "$ARCH" in
+    arm64)
+        ok "Apple Silicon ($ARCH)"
+        ;;
+    x86_64)
+        warn "Intel Mac ($ARCH) detected — community-supported. Apple Silicon is recommended."
+        ;;
+    *)
+        error "Unsupported architecture: $ARCH. Only arm64 and x86_64 are supported."
+        ;;
+esac
 
 # Check for Xcode Command Line Tools
 if ! xcode-select -p &>/dev/null; then
@@ -61,8 +68,12 @@ ok "Xcode Command Line Tools"
 if ! command -v brew &> /dev/null; then
     info "Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    # Add Homebrew to PATH for this session
-    eval "$(/opt/homebrew/bin/brew shellenv)"
+    # Add Homebrew to PATH for this session (paths differ on Apple Silicon vs Intel)
+    if [ "$ARCH" = "arm64" ]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+    else
+        eval "$(/usr/local/bin/brew shellenv)"
+    fi
 fi
 ok "Homebrew $(brew --version | head -1 | awk '{print $2}')"
 
@@ -81,7 +92,7 @@ DEPS=(
     doxygen         # Documentation generation (build requirement)
     graphviz        # Documentation graphs (build requirement)
     node            # Web UI build toolchain (Vue 3 + Vite)
-    icu4c@78        # Unicode support (Boost.Locale dependency)
+    icu4c           # Unicode support (Boost.Locale dependency)
     miniupnpc       # UPnP port mapping for automatic NAT traversal
 )
 

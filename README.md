@@ -1,6 +1,6 @@
 # Lumen
 
-**Native macOS game streaming, built for Apple Silicon.**
+**Native macOS game streaming, built for Apple Silicon and Intel Macs.**
 
 Lumen is a fork of [Sunshine](https://github.com/LizardByte/Sunshine) that fixes macOS support from the ground up. Stream your Mac's display to any [Moonlight](https://moonlight-stream.org/) client — TV, phone, tablet, another PC — with native system audio, automatic virtual display management, and hardware-accelerated encoding.
 
@@ -29,7 +29,7 @@ Upstream Sunshine has significant issues on macOS:
 
 - **Automatic virtual displays** — When a Moonlight client connects, Lumen creates a virtual display matching the client's requested resolution and refresh rate (e.g., 4K@60Hz). When the last client disconnects, the virtual display is destroyed. No third-party display managers needed.
 
-- **Hardware-accelerated encoding** — VideoToolbox H.264 and HEVC encoding with Apple Silicon hardware acceleration. H.264 at 1080p60 encodes in ~15ms on M4 (fits within the 16.67ms frame budget). HEVC available for higher quality at the cost of slightly higher latency (~18ms on M4).
+- **Hardware-accelerated encoding** — VideoToolbox H.264 and HEVC encoding with hardware acceleration (Apple Silicon or Intel). H.264 at 1080p60 encodes in ~15ms on M4 (fits within the 16.67ms frame budget). HEVC available for higher quality at the cost of slightly higher latency (~18ms on M4).
 
 - **Virtual gamepad** — Creates a system-wide virtual HID gamepad that appears as a real controller to any application. Works with SDL-based games, Dolphin Emulator, Steam, Ryujinx, and more. Requires one-time security configuration (see [Gamepad Setup](#gamepad-setup-optional)).
 
@@ -40,7 +40,7 @@ Upstream Sunshine has significant issues on macOS:
 ## Requirements
 
 - **macOS 14 (Sonoma) or later** — required for CGVirtualDisplay API
-- **Apple Silicon Mac** (M1/M2/M3/M4) — ARM64 only
+- **Apple Silicon Mac** (M1/M2/M3/M4) — ARM64<br/>**Intel Mac** — x86_64 (community-supported)
 - **Moonlight client** on your target device — [moonlight-stream.org](https://moonlight-stream.org/)
 
 ---
