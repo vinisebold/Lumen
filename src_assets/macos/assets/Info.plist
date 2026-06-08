@@ -6,6 +6,8 @@
   <string>com.lumen.streaming</string>
   <key>CFBundleName</key>
   <string>Lumen</string>
+  <key>LSUIElement</key>
+  <true/>
   <key>NSScreenCaptureDescription</key>
   <string>Lumen needs screen recording access to capture your display for streaming to Moonlight clients.</string>
   <key>NSMicrophoneUsageDescription</key>
