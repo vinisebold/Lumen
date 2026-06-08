@@ -66,34 +66,31 @@ The install script handles everything:
    - `doxygen` — documentation generation (build requirement)
    - `graphviz` — documentation graphs (build requirement)
    - `node` — web UI build (Vue 3 + Vite)
-   - `icu4c@78` — Unicode support (Boost.Locale dependency)
+   - `icu4c` — Unicode support (Boost.Locale dependency)
    - `miniupnpc` — UPnP port mapping for NAT traversal
 4. Detects the correct macOS SDK path and C++ header location
 5. Configures cmake with all necessary flags (see [macOS Build Fixes](#macos-build-fixes) for why this is needed)
 6. Builds from source with all CPU cores
-7. Installs the binary, virtual display helper, and assets to `~/.local/share/lumen/`
+7. Installs the binary, virtual display helper, and assets to `~/Library/Application Support/Lumen/`
 8. Sets up default configuration in `~/.config/sunshine/`
-9. Creates a `lumen` launch command in `~/.local/bin/`
+9. Registers a LaunchAgent so Lumen starts automatically as a background service
 
-After installation, grant these macOS permissions when prompted:
-- **Screen Recording** (System Settings > Privacy & Security > Screen Recording)
-- **Accessibility** (System Settings > Privacy & Security > Accessibility)
+After installation, grant these macOS permissions when prompted (the installer opens System Settings for you):
+- **Screen Recording** — add `~/Library/Application Support/Lumen/sunshine` (use Cmd+Shift+G)
+- **Accessibility** — same path as above
 
 ---
 
 ## Usage
 
-### Start Lumen
+### Lumen runs as a background service
 
-```bash
-lumen
-```
+After installation, Lumen starts automatically and will restart at every login.
+No terminal needed — the system tray icon in your menu bar gives you access to the Web UI, restart, and quit.
 
-Or if `~/.local/bin` isn't in your PATH:
+### Web UI
 
-```bash
-~/.local/bin/lumen
-```
+Open **https://localhost:47990** in your browser to configure and manage Lumen.
 
 ### Pair with Moonlight
 
@@ -104,9 +101,21 @@ Or if `~/.local/bin` isn't in your PATH:
 5. Enter the PIN shown in Moonlight into the Lumen web UI
 6. Connect — a virtual display is created automatically at your client's resolution
 
-### Stop Lumen
+### Stop / Restart Lumen
 
-Press `Ctrl+C` in the terminal, or quit from the system tray icon.
+Use the system tray icon (in your menu bar) or run:
+```bash
+launchctl kickstart gui/$(id -u)/com.lumen.streaming   # restart
+launchctl bootout gui/$(id -u)/com.lumen.streaming      # stop
+```
+
+### Uninstall
+
+Run the uninstall script:
+```bash
+./scripts/uninstall.sh
+```
+Or re-run `./install.sh` and choose "Yes" when prompted to uninstall.
 
 ---
 
@@ -188,8 +197,8 @@ macOS restricts the creation of virtual HID devices to prevent malicious softwar
 
 6. **Sign the Lumen binaries** with the HID entitlement:
    ```bash
-   codesign --sign - --entitlements ~/.local/share/lumen/hid_entitlements.plist --force ~/.local/share/lumen/sunshine
-   codesign --sign - --force ~/.local/share/lumen/vd_helper
+   codesign --sign - --entitlements ~/Library/Application\ Support/Lumen/hid_entitlements.plist --force ~/Library/Application\ Support/Lumen/sunshine
+   codesign --sign - --force ~/Library/Application\ Support/Lumen/vd_helper
    ```
 
 That's it. The gamepad will now appear in any application as a generic USB controller. You can verify it's working by connecting from Moonlight with a controller and checking System Information > USB.
@@ -198,7 +207,7 @@ That's it. The gamepad will now appear in any application as a generic USB contr
 
 - **AMFI disable persists across reboots** — you only need to do this once
 - **Re-sign after every rebuild** — if you rebuild from source, run the `codesign` commands again
-- **The `lumen` launcher auto-signs on every launch** — the manual step above is only needed if you bypass the launcher
+- **The installer auto-signs on install** — the manual step above is only needed if you rebuild from source without running the installer
 - **To re-enable AMFI later:** boot into Recovery Mode and run `nvram -d boot-args`
 - **Without AMFI disabled, Lumen still works fully** — you just won't have gamepad support. Keyboard, mouse, virtual displays, audio, and all other features work normally.
 - **Security note:** Disabling AMFI reduces one layer of macOS security. Only do this if you understand the implications and need gamepad support.
@@ -283,10 +292,12 @@ mDNS/DNS-SD is used for automatic discovery on the local network — Moonlight w
 
 ### Viewing Logs
 
-Lumen outputs logs to the terminal. To save logs to a file:
+Lumen logs to `~/Library/Logs/Lumen/com.lumen.streaming.log` when running as a LaunchAgent.
+
+To follow logs in real time:
 
 ```bash
-lumen 2>&1 | tee ~/lumen.log
+tail -f ~/Library/Logs/Lumen/com.lumen.streaming.log
 ```
 
 ---
