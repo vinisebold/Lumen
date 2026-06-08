@@ -97,6 +97,7 @@ void tray_update(struct tray *tray) {
   NSImage *image = [[NSImage alloc] initWithContentsOfFile:[NSString stringWithUTF8String:tray->icon]];
   NSSize size = NSMakeSize(16, 16);
   [image setSize:NSMakeSize(16, 16)];
+  [image setTemplate:YES];
   statusItem.button.image = image;
   [statusItem setMenu:_tray_menu(tray->menu)];
 }
