@@ -1586,7 +1586,7 @@ namespace video {
     // fallback options, we may need to allow more retries
     // to try applying each set.
     avcodec_ctx_t ctx;
-    for (int retries = 0; retries < 2; retries++) {
+    for (int retries = 0; retries < 3; retries++) {
       ctx.reset(avcodec_alloc_context3(codec));
       ctx->width = config.width;
       ctx->height = config.height;
@@ -1634,6 +1634,9 @@ namespace video {
         ctx->gop_size = encoder.flags & LIMITED_GOP_SIZE ?
                           std::numeric_limits<std::int16_t>::max() :
                           std::numeric_limits<int>::max();
+#ifdef __APPLE__
+        if (encoder.name != "videotoolbox"s)
+#endif
         ctx->keyint_min = std::numeric_limits<int>::max();
       }
 
@@ -1648,9 +1651,14 @@ namespace video {
 
       // We forcefully reset the flags to avoid clash on reuse of AVCodecContext
       ctx->flags = 0;
-      ctx->flags |= AV_CODEC_FLAG_CLOSED_GOP | AV_CODEC_FLAG_LOW_DELAY;
-
-      ctx->flags2 |= AV_CODEC_FLAG2_FAST;
+#ifdef __APPLE__
+      if (encoder.name != "videotoolbox"s) {
+#endif
+        ctx->flags |= AV_CODEC_FLAG_CLOSED_GOP | AV_CODEC_FLAG_LOW_DELAY;
+        ctx->flags2 |= AV_CODEC_FLAG2_FAST;
+#ifdef __APPLE__
+      }
+#endif
 
       auto avcodec_colorspace = avcodec_colorspace_from_sunshine_colorspace(colorspace);
 
@@ -1729,8 +1737,14 @@ namespace video {
         ctx->slices = 1;
       }
 
-      ctx->thread_type = FF_THREAD_SLICE;
-      ctx->thread_count = ctx->slices;
+#ifdef __APPLE__
+      if (encoder.name != "videotoolbox"s) {
+#endif
+        ctx->thread_type = FF_THREAD_SLICE;
+        ctx->thread_count = ctx->slices;
+#ifdef __APPLE__
+      }
+#endif
 
       AVDictionary *options {nullptr};
       auto handle_option = [&options, &config](const encoder_t::option_t &option) {
@@ -1778,7 +1792,7 @@ namespace video {
           handle_option(option);
         }
       }
-      if (retries > 0) {
+      if (retries >= 2) {
         for (auto &option : video_format.fallback_options) {
           handle_option(option);
         }
@@ -1824,20 +1838,28 @@ namespace video {
       if (auto status = avcodec_open2(ctx.get(), codec, &options)) {
         char err_str[AV_ERROR_MAX_STRING_SIZE] {0};
 
-        if (!video_format.fallback_options.empty() && retries == 0) {
+        if (retries == 0) {
+          BOOST_LOG(info)
+            << "Retrying without LOW_DELAY flag for ["sv << video_format.name << "] after error: "sv
+            << av_make_error_string(err_str, AV_ERROR_MAX_STRING_SIZE, status);
+
+          continue;
+        }
+
+        if (retries == 1 && !video_format.fallback_options.empty()) {
           BOOST_LOG(info)
             << "Retrying with fallback configuration options for ["sv << video_format.name << "] after error: "sv
             << av_make_error_string(err_str, AV_ERROR_MAX_STRING_SIZE, status);
 
           continue;
-        } else {
-          BOOST_LOG(error)
-            << "Could not open codec ["sv
-            << video_format.name << "]: "sv
-            << av_make_error_string(err_str, AV_ERROR_MAX_STRING_SIZE, status);
-
-          return nullptr;
         }
+
+        BOOST_LOG(error)
+          << "Could not open codec ["sv
+          << video_format.name << "]: "sv
+          << av_make_error_string(err_str, AV_ERROR_MAX_STRING_SIZE, status);
+
+        return nullptr;
       }
 
       // Successfully opened the codec
