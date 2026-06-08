@@ -12,11 +12,12 @@ LAUNCH_AGENT_PLIST="$HOME/Library/LaunchAgents/$LAUNCH_AGENT_LABEL.plist"
 BINARY="$(dirname "$0")/sunshine"
 WEB_UI="https://localhost:47990"
 
-# Check if the LaunchAgent is loaded
-if ! launchctl list | grep -q "$LAUNCH_AGENT_LABEL" 2>/dev/null; then
-    if [ -f "$LAUNCH_AGENT_PLIST" ] && [ -f "$BINARY" ]; then
+# Ensure the LaunchAgent is running.
+# kickstart starts it if loaded but stopped (e.g. after tray Quit).
+# bootstrap loads it if not yet registered.
+if [ -f "$LAUNCH_AGENT_PLIST" ] && [ -f "$BINARY" ]; then
+    launchctl kickstart "gui/$(id -u)/$LAUNCH_AGENT_LABEL" 2>/dev/null || \
         launchctl bootstrap "gui/$(id -u)" "$LAUNCH_AGENT_PLIST" 2>/dev/null
-    fi
 fi
 
 # Wait for the Web UI to be ready (up to 15 seconds)
